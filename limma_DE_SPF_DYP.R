@@ -1,18 +1,14 @@
-################################################################################
+
 library("limma")
 library("edgeR")
 library("enrichR")
 library("plyr")
-################################################################################
 options(stringsAsFactors=FALSE)
-################################################################################
 
-
-###load the count data-----------
+##load the count data
 my.counts <- read.delim("htseq_ao_spf.txt", row.names=1)
 my.counts <- my.counts[c(1:(nrow(my.counts)-5)), ]
-
-###load the phenotype data-----------
+###load the trait data
 pheno <- read.delim("ao_phenotypeinfo_spf.txt", row.names=1)
 
 ###Set-up the design matrix------
@@ -55,27 +51,4 @@ res7 <- as.data.frame(topTable(fit2, coef=7, number=nrow(my.counts)))
 #write.table(res4, file="htseq_etoh_cno_etoh_vehicle_spf.txt", sep="\t")
 #write.table(res5, file="htseq_int_etoh_cno_spf.txt", sep="\t")
 #write.table(res6, file="htseq__etoh_cno_h2o_veh_dyp.txt", sep="\t")
-
-
-###Perform Gene Ontology Analysis-----
-#Change Directory
-
-dbs <- listEnrichrDbs()
-list.dbs <- c(dbs$libraryName)
-list.dbs <- list.dbs[-c(61, 70)]
-
-de.files <- list.files(pattern="*.txt")
-
-for (a in 1:length(de.files)){
-	f.name <- strsplit(as.character(de.files[a]), split="_spf.txt")[[1]]
-	fi <- read.delim(de.files[a], row.names=1)
-	sig <- subset(fi, P.Value <= 0.05)
-	numsig <- nrow(sig)
-	genes <- row.names(sig)
-	my.enriched <- enrichr(genes, list.dbs)
-	enriched.df <- ldply(my.enriched, "data.frame")
-	write.table(enriched.df, file=paste(f.name, "_enrichr_spf.txt", sep=""), sep="\t")
-}
-################################################################################
-#Generate Volcano Plots
 
