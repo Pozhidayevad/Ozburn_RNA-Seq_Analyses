@@ -1,7 +1,6 @@
 #load the necessary package(s)+enable parallel processing
 library("WGCNA")
 library("flashClust")
-library(dplyr)
 options(stringsAsFactors=FALSE)
 allowWGCNAThreads()
 
@@ -36,12 +35,8 @@ powers = c(1:30)
 # Call the network topology analysis function
 sft = pickSoftThreshold(ft_tlogb2_org, powerVector = powers, verbose = 5, networkType="signed hybrid")
 
-#constructing  a  weighted  gene  network  entails  the  choice  of  the  
-#soft  thresholding  power β
-#to  which  co-expression
-#similarity is raised to calculate adjacency.The user chooses a set of candidate powers (the function provides
-#suitable default values), and the function returns a set of network indices that should be inspected.
-
+#Constructing  a  weighted  gene  network  entails  the  choice  of  the soft  thresholding  power β 
+#to  which  co-expression similarity is raised to calculate adjacency.
 #plot result------------------------------------------------------------------------------------------
 sizeGrWindow(9, 5)
 par(mfrow = c(1,2));
@@ -69,15 +64,13 @@ ft_tlogb2_org.softPower <- 7
 adjacency_ft_tlogb2_org <- adjacency(ft_tlogb2_org, power=ft_tlogb2_org.softPower, type="signed hybrid")
 diag(adjacency_ft_tlogb2_org)=0
 
-#To minimize effects of noise and spurious associations, we transform the adjacency into Topological Overlap Matrix,
-#and calculate the corresponding dissimilarity
+#To minimize effects of noise and spurious associations, we transform the adjacency into Topological Overlap Matrix, and calculate the corresponding dissimilarity.
 dissTOM_ft_tlogb2_org <- 1-TOMsimilarity(adjacency_ft_tlogb2_org, TOMType="signed", verbose=3) 
 
 #We now use hierarchical clustering to produce a hierarchical clustering tree (dendrogram) of genes. 
 geneTree_ft_tlogb2_org <- flashClust(as.dist(dissTOM_ft_tlogb2_org), method="average") 
 geneTree_ft_tlogb2_org$height <- sort(geneTree_ft_tlogb2_org$height, decreasing = F)
-
-# We like large modules, so we set the minimum module size relatively high (cutheigh low to remove garbage genes):
+# cutheigh low to remove garbage genes:
 minModuleSize=100
 detectCutHeight=0.01
 
@@ -106,14 +99,12 @@ dimnames(modTOM) = list(modGenes, modGenes)
 #Remove these genes and rerun WGCNA---------------------------
 ft_tlogb2_org_cln <- as.data.frame(ft_tlogb2_org[modGenes])
 
-#-------------------------------------------------------------------
 #-Check data and clean low correlations-------------------------------------------------------------------------------------------
 Correlation_ft_tlogb2_org_cln <- abs(cor(ft_tlogb2_org_cln, method = c("pearson")))
 diag(Correlation_ft_tlogb2_org_cln)=0
 SUMCOR <- as.matrix(colSums(Correlation_ft_tlogb2_org_cln))
 hist(SUMCOR)
 plot(density(SUMCOR))
-
 sft = pickSoftThreshold(ft_tlogb2_org_cln, powerVector = powers, verbose = 5, networkType="signed hybrid")
 
 #plot
@@ -133,6 +124,7 @@ plot(sft$fitIndices[,1], sft$fitIndices[,5],
      xlab="Soft Threshold (power)",ylab="Mean Connectivity", type="n",
      main = paste("Mean connectivity"))
 text(sft$fitIndices[,1], sft$fitIndices[,5], labels=powers, cex=cex1,col="red")
+
 #-------------RERUN WGCNA--------------------------------------------
 ft_tlogb2_org_cln.softPower <- 7
 adjacency_ft_tlogb2_org_cln <- adjacency(ft_tlogb2_org_cln, power=ft_tlogb2_org_cln.softPower, type="signed hybrid")
@@ -145,7 +137,7 @@ geneTree_ft_tlogb2_org_cln$height <- sort(geneTree_ft_tlogb2_org_cln$height, dec
 
 # We like large modules, so we set the minimum module size relatively high:
 minModuleSize=100
-detectCutHeight=0.98
+detectCutHeight=0.998
 
 # Module identification using dynamic tree cut:
 suppressWarnings(dynamicMod_ft_tlogb2_org_cln <- cutreeDynamic(dendro=geneTree_ft_tlogb2_org_cln, cutHeight=detectCutHeight, minClusterSize=minModuleSize, deepSplit=0, verbose=3))    
@@ -200,9 +192,10 @@ par(cex = 2)
 plotEigengeneNetworks(MEs, "", marDendro = c(0,4,1,2), excludeGrey = TRUE, marHeatmap = c(3,4,1,2), cex.lab = 1, xLabelsAngle
                       = 90)
 dev.off()
+
+
 ####Identify Hub Genes in The Network----------------------------------------------------------------
 Hubs = chooseTopHubInEachModule(ft_tlogb2_org_cln, mergedColors, omitColors="grey", power=ft_tlogb2_org_cln.softPower,type="signed hybrid")
-
 #Export Hubs
 write.table(Hubs, file = "Hub Genes_3112019", append = FALSE, quote = TRUE, sep = "",
             eol = "\n", na = "NA", dec = ".", row.names = TRUE,
@@ -215,17 +208,11 @@ nGenes = ncol(ft_tlogb2_org_cln)
 nSamples = nrow(ft_tlogb2_org_cln)
 ft_tlogb2_org_cln <- ft_tlogb2_org_cln[match(rownames(traitDat), rownames(ft_tlogb2_org_cln)), ]
 MEs <- MEs[match(rownames(traitDat), rownames(MEs)), ]
-
 moduleTraitCor = cor(MEs, traitDat, use = "p")
 moduleTraitPvalue = corPvalueStudent(moduleTraitCor, nSamples)
 
 #plot and check
-#Display Correlations within heatmap
-#each  row  corresponds  to  a  module  eigengene,  column  to  a  trait.   Each  cell
-#contains the corresponding correlation and p-value.  The table is color-coded by correlation according to the color
-#legend.
-
-
+##Correlation Heatmap
 moduleTraitCor <- moduleTraitCor[order(moduleTraitCor[,1], decreasing = TRUE),]
 moduleTraitPvalue <-moduleTraitPvalue[match(rownames(moduleTraitCor), rownames(moduleTraitPvalue)), ]
 
@@ -253,11 +240,8 @@ labeledHeatmap (Matrix = moduleTraitCor,
                 cex.lab = 2,
                 invertColors = TRUE)
 dev.off()
+
 #GeneSignificance and Module Membership
-###We quantify associations of individual genes with our trait of interest (weight) by defining Gene Significance GS as
-#(the absolute value of) the correlation between the gene and the trait.  For each module, we also define a quantitative
-#measure of module membership MM as the correlation of the module eigengene and the gene expression profile.  This
-#allows us to quantify the similarity of all genes on the array to every module.
 ETOH_VEH = as.data.frame(traitDat$ETOH_VEH, row.names(traitDat))
 names(ETOH_VEH) = "ETOH VEH"
 modNames = substring(names(MEs), 3)
@@ -273,7 +257,7 @@ GSPvalue = as.data.frame(corPvalueStudent(as.matrix(geneTraitSignificance), nSam
 names(geneTraitSignificance) = paste("GS.", names(ETOH_VEH), sep="");
 names(GSPvalue) = paste("p.GS.", names(ETOH_VEH), sep="")
 
-##Plot a scatterplot of Gene Significance vs. Module Membership in a specific module
+#Plot a scatterplot of Gene Significance vs. Module Membership in a specific module
 module = "brown"
 column = match(module, modNames)
 moduleGenes = (moduleColors==module)
@@ -302,7 +286,6 @@ plotModuleSignificance(abs(geneTraitSignificance), mergedColors, ylim=c(0, 0.3),
 
 #We  now  create  a  plot  that  explains  the  relationships  between  modules  (heatmap)  
 #and  the  corresponding  module eigengene (barplot)
-  
 sizeGrWindow(8,7);
 which.module="black"
 
@@ -348,12 +331,11 @@ write.csv(
                signif(statsZ[, c("Zsummary.pres", "Zsummary.qual")], 2)) ), file ="module quality.csv", row.names = TRUE
 )
 
-
 # Module labels and module sizes are also contained in the results
 modColors = rownames(mp$preservation$observed[[ref]][[test]])
 moduleSizes = mp$preservation$Z[[ref]][[test]][, 1];
-# leave grey and gold modules out
-plotMods = !(modColors %in% c("grey", "gold"));
+# leave grey modules out
+plotMods = !(modColors %in% c("grey"));
 # Text labels for points
 text = modColors[plotMods];
 # Auxiliary convenience variable
@@ -362,7 +344,6 @@ plotData = cbind(mp$preservation$observed[[ref]][[test]][, 2], mp$preservation$Z
 mains = c("Preservation Median rank", "Preservation Zsummary");
 # Start the plot
 sizeGrWindow(10, 5);
-#pdf(fi="Plots/BxHLiverFemaleOnly-modulePreservation-Zsummary-medianRank.pdf", wi=10, h=5)
 par(mfrow = c(1,2))
 par(mar = c(4.5,4.5,2.5,1))
 for (p in 1:2)
@@ -394,9 +375,7 @@ for (p in 1:2)
 dev.off();
 
 #run modulePreservation with this input and look at module quality scores in the output (ignore the preservation metrics).
-
 data.frame(color = modColors[plotMods], label = labs)
-
 # Re-initialize module color labels and sizes
 modColors = rownames(statsZ)
 moduleSizes = mp$quality$Z[[ref]][[test]][, 1];
