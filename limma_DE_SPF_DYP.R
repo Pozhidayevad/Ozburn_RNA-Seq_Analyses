@@ -21,7 +21,7 @@ colnames(design) <- levels(TS)
 #Set-up the contrasts
 cont.matrix <- makeContrasts(
        EtOHvsH20inVEH=VEH.EtOH-VEH.H2O,
-       EtOHvsH20inCNO=CNO.EtOH-CNO.H2O,
+       EtOHvsH20inCNO=CNO.EtOH-VEH.H2O,
        CNOvsVEHinH20=CNO.H2O-VEH.H2O,
        CNOvsVEHinEtOH=CNO.EtOH-VEH.EtOH,
        EtOHCvsEtOHVinH2O=CNO.EtOH-VEH.H2O,
@@ -42,13 +42,5 @@ res2 <- as.data.frame(topTable(fit2, coef=2, number=nrow(my.counts)))
 res3 <- as.data.frame(topTable(fit2, coef=3, number=nrow(my.counts)))
 res4 <- as.data.frame(topTable(fit2, coef=4, number=nrow(my.counts)))
 res5 <- as.data.frame(topTable(fit2, coef=5, number=nrow(my.counts)))
-res6 <- as.data.frame(topTable(fit2, coef=6, number=nrow(my.counts)))
-res7 <- as.data.frame(topTable(fit2, coef=7, number=nrow(my.counts)))
 
-#write.table(res1, file="htseq_etoh_vehicle_spf.txt", sep="\t")
-#write.table(res2, file="htseq_etoh_cno_spf.txt", sep="\t")
-#write.table(res3, file="htseq_cno_vehicle_spf.txt", sep="\t")
-#write.table(res4, file="htseq_etoh_cno_etoh_vehicle_spf.txt", sep="\t")
-#write.table(res5, file="htseq_int_etoh_cno_spf.txt", sep="\t")
-#write.table(res6, file="htseq__etoh_cno_h2o_veh_dyp.txt", sep="\t")
 
